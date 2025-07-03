@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentification</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      transition: all 0.3s ease;
+    }
+
+    .container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    }
+
+    .welcome-banner {
+      background: linear-gradient(45deg, #4CAF50, #45a049);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+      animation: slideDown 0.5s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 28px;
+      font-weight: 300;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px 20px;
+      border: 2px solid #e1e5e9;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    input::placeholder {
+      color: #adb5bd;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin: 20px 0;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-weight: 500;
+      text-align: center;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .message.show {
+      opacity: 1;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .switch {
+      text-align: center;
+      margin: 15px 0;
+      color: #667eea;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .switch:hover {
+      background: rgba(102, 126, 234, 0.1);
+      transform: scale(1.02);
+    }
+
+    .logout-btn {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      margin-top: 10px;
+      color: white;
+    }
+
+    .logout-btn:hover {
+      box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .debug-info {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 25px;
+        margin: 10px;
+      }
+      
+      h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="welcomeBanner" class="welcome-banner">
+      👋 Bonjour <span id="userName"></span> !
+    </div>
+
+    <h2 id="formTitle">Inscription</h2>
+
+    <form id="authForm">
+      <div class="form-group" id="pseudoGroup">
+        <input type="text" id="pseudo" placeholder="Pseudo" autocomplete="username">
+      </div>
+      
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Email" required autocomplete="email">
+      </div>
+      
+      <div class="form-group">
+        <input type="password" id="password" placeholder="Mot de passe" required autocomplete="current-password">
+      </div>
+      
+      <button type="submit" class="btn" id="submitBtn">
+        <span id="btnText">S'inscrire</span>
+      </button>
+    </form>
+
+    <div id="message" class="message"></div>
+
+    <div class="switch" id="toggleLink" onclick="toggleForm()">
+      Déjà inscrit ? Cliquez ici
+    </div>
+
+    <div class="switch logout-btn hidden" id="logoutBtn" onclick="logout()">
+      Se déconnecter
+    </div>
+
+    <div class="debug-info" id="debugInfo">
+      <div>🌐 API Base: <span id="apiUrl"></span></div>
+      <div>📍 Current URL: <span id="currentUrl"></span></div>
+      <div>🔄 Mode: <span id="currentMode"></span></div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration de l'API - même origine que la page
+    const API_BASE = window.location.origin;
+    
+    let mode = "register";
+    let isLoading = false;
+
+    // Éléments DOM
+    const formTitle = document.getElementById('formTitle');
+    const authForm = document.getElementById('authForm');
+    const pseudoGroup = document.getElementById('pseudoGroup');
+    const pseudoInput = document.getElementById('pseudo');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const messageEl = document.getElementById('message');
+    const toggleLink = document.getElementById('toggleLink');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const welcomeBanner = document.getElementById('welcomeBanner');
+    const userName = document.getElementById('userName');
+    
+    // Debug info
+    const debugInfo = document.getElementById('debugInfo');
+    const apiUrl = document.getElementById('apiUrl');
+    const currentUrl = document.getElementById('currentUrl');
+    const currentMode = document.getElementById('currentMode');
+
+    // Initialisation debug
+    apiUrl.textContent = API_BASE;
+    currentUrl.textContent = window.location.href;
+    currentMode.textContent = mode;
+
+    function toggleForm() {
+      mode = mode === "register" ? "login" : "register";
+      currentMode.textContent = mode;
+      
+      // Mise à jour du titre et bouton
+      formTitle.textContent = mode === "register" ? "Inscription" : "Connexion";
+      btnText.textContent = mode === "register" ? "S'inscrire" : "Se connecter";
+      toggleLink.textContent = mode === "register" 
+        ? "Déjà inscrit ? Cliquez ici" 
+        : "Pas encore de compte ? Cliquez ici";
+
+      // Gestion du champ pseudo
+      if (mode === "register") {
+        pseudoGroup.classList.remove('hidden');
+        pseudoInput.required = true;
+        // Vider les champs pour l'inscription
+        emailInput.value = '';
+        passwordInput.value = '';
+        pseudoInput.value = '';
+      } else {
+        pseudoGroup.classList.add('hidden');
+        pseudoInput.required = false;
+        pseudoInput.value = '';
+        // Pré-remplir pour la connexion
+        emailInput.value = 'test@example.com';
+        passwordInput.value = '123456';
+      }
+
+      // Effacer le message
+      hideMessage();
+    }
+
+    function showMessage(text, type = 'error') {
+      messageEl.textContent = text;
+      messageEl.className = `message ${type} show`;
+      console.log(`📝 Message: ${text} (${type})`);
+    }
+
+    function hideMessage() {
+      messageEl.className = 'message';
+    }
+
+    function setLoading(loading) {
+      isLoading = loading;
+      if (loading) {
+        submitBtn.disabled = true;
+        btnText.innerHTML = '<span class="loading"></span>Chargement...';
+      } else {
+        submitBtn.disabled = false;
+        btnText.textContent = mode === "register" ? "S'inscrire" : "Se connecter";
+      }
+    }
+
+    function showWelcomeBanner() {
+      const pseudo = localStorage.getItem('userPseudo');
+      const token = localStorage.getItem('jwt');
+      
+      if (pseudo && token) {
+        userName.textContent = pseudo;
+        welcomeBanner.style.display = 'block';
+        logoutBtn.classList.remove('hidden');
+        authForm.style.display = 'none';
+        toggleLink.style.display = 'none';
+        formTitle.textContent = 'Bienvenue !';
+        debugInfo.style.display = 'none';
+      }
+    }
+
+    function hideWelcomeBanner() {
+      welcomeBanner.style.display = 'none';
+      logoutBtn.classList.add('hidden');
+      authForm.style.display = 'block';
+      toggleLink.style.display = 'block';
+      formTitle.textContent = mode === "register" ? "Inscription" : "Connexion";
+      debugInfo.style.display = 'block';
+    }
+
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (isLoading) return;
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      const pseudo = pseudoInput.value.trim();
+
+      // Validation côté client
+      if (!email || !password) {
+        showMessage('Veuillez remplir tous les champs requis.');
+        return;
+      }
+
+      if (mode === "register" && !pseudo) {
+        showMessage('Le pseudo est requis pour l\'inscription.');
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage('Le mot de passe doit contenir au moins 6 caractères.');
+        return;
+      }
+
+      const endpoint = mode === "register" 
+        ? `${API_BASE}/api/auth/register`
+        : `${API_BASE}/api/auth/login`;
+
+      const payload = mode === "register" 
+        ? { pseudo, email, password }
+        : { email, password };
+
+      setLoading(true);
+      hideMessage();
+
+      try {
+        console.log(`🚀 Envoi vers: ${endpoint}`);
+        console.log(`📦 Payload:`, payload);
+        
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        console.log(`📊 Status: ${res.status} ${res.statusText}`);
+        
+        // Vérifier si la réponse contient du JSON
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error(`Réponse non-JSON reçue: ${res.status} ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        console.log('📥 Réponse serveur:', data);
+
+        if (res.ok && data.token) {
+          // Succès
+          localStorage.setItem('jwt', data.token);
+          localStorage.setItem('userPseudo', data.user?.pseudo || pseudo);
+          
+          showMessage(data.message || 'Connexion réussie !', 'success');
+          
+          // Afficher la bannière après un court délai
+          setTimeout(() => {
+            showWelcomeBanner();
+            authForm.reset();
+          }, 1500);
+          
+        } else {
+          // Erreur
+          showMessage(data.message || data.error || 'Une erreur est survenue.');
+        }
+
+      } catch (err) {
+        console.error('❌ Erreur:', err);
+        showMessage(`Erreur de connexion: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('userPseudo');
+      hideWelcomeBanner();
+      showMessage('Déconnexion réussie !', 'success');
+      authForm.reset();
+      
+      // Effacer le message après 3 secondes
+      setTimeout(hideMessage, 3000);
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🎯 Application initialisée');
+      console.log('📍 API Base:', API_BASE);
+      
+      toggleForm(); // Configure le mode initial
+      showWelcomeBanner(); // Vérifie si l'utilisateur est déjà connecté
+    });
+
+    // Déconnexion automatique si le token expire
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'jwt' && !e.newValue) {
+        hideWelcomeBanner();
+        showMessage('Session expirée, veuillez vous reconnecter.');
+      }
+    });
+  </script>
+</body>
+</html>

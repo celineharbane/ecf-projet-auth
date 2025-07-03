@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Auth</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
+    input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+    button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .message { padding: 10px; margin: 10px 0; border-radius: 5px; }
+    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .switch { text-align: center; margin: 20px 0; color: #007bff; cursor: pointer; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h2 id="title">Connexion</h2>
+  
+  <form id="authForm">
+    <input type="text" id="pseudo" placeholder="Pseudo" class="hidden">
+    <input type="email" id="email" placeholder="Email" value="test@example.com" required>
+    <input type="password" id="password" placeholder="Mot de passe" value="123456" required>
+    <button type="submit" id="submitBtn">Se connecter</button>
+  </form>
+
+  <div id="message" class="message hidden"></div>
+  
+  <div class="switch" onclick="toggleForm()">
+    <span id="toggleText">Pas encore de compte ? Cliquez ici</span>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let mode = "login";
+
+    function toggleForm() {
+      mode = mode === "login" ? "register" : "login";
+      
+      const title = document.getElementById('title');
+      const pseudo = document.getElementById('pseudo');
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const submitBtn = document.getElementById('submitBtn');
+      const toggleText = document.getElementById('toggleText');
+      
+      if (mode === "login") {
+        title.textContent = "Connexion";
+        pseudo.classList.add('hidden');
+        email.value = "test@example.com";
+        password.value = "123456";
+        submitBtn.textContent = "Se connecter";
+        toggleText.textContent = "Pas encore de compte ? Cliquez ici";
+      } else {
+        title.textContent = "Inscription";
+        pseudo.classList.remove('hidden');
+        email.value = "";
+        password.value = "";
+        submitBtn.textContent = "S'inscrire";
+        toggleText.textContent = "Déjà inscrit ? Cliquez ici";
+      }
+      
+      hideMessage();
+    }
+
+    function showMessage(text, type = 'error') {
+      const messageEl = document.getElementById('message');
+      messageEl.textContent = text;
+      messageEl.className = `message ${type}`;
+      console.log(`Message: ${text} (${type})`);
+    }
+
+    function hideMessage() {
+      const messageEl = document.getElementById('message');
+      messageEl.className = 'message hidden';
+    }
+
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const pseudo = document.getElementById('pseudo').value.trim();
+
+      if (!email || !password || (mode === "register" && !pseudo)) {
+        showMessage('Veuillez remplir tous les champs.');
+        return;
+      }
+
+      const endpoint = `${API_BASE}/api/auth/${mode}`;
+      const payload = mode === "register" 
+        ? { pseudo, email, password }
+        : { email, password };
+
+      console.log(`🚀 Envoi vers: ${endpoint}`, payload);
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        console.log(`📊 Status: ${res.status}`);
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('📥 Réponse:', data);
+          showMessage(data.message || 'Succès !', 'success');
+        } else {
+          const data = await res.json();
+          showMessage(data.message || 'Erreur inconnue');
+        }
+
+      } catch (err) {
+        console.error('❌ Erreur:', err);
+        showMessage(`Erreur: ${err.message}`);
+      }
+    });
+
+    // Initialisation
+    toggleForm();
+  </script>
+</body>
+</html>
